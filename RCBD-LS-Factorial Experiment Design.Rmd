@@ -1,0 +1,137 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+### RCBD
+##
+## Table 4.3
+## Vascular graft
+rm(list=ls())
+```
+
+```{r}
+library( agricolae)
+```
+
+```{r}
+a = 4                    
+b = 6                    
+```
+
+```{r}
+T8500 <- c(90.3, 89.2, 98.2, 93.9, 87.4, 97.9)
+T8700 <- c(92.5, 89.5, 90.6, 94.7, 87.0, 95.8)
+T8900 <- c(85.5, 90.8, 89.6, 86.2, 88.0, 93.4)
+T9100 <- c(82.5, 89.5, 85.6, 87.4, 78.9, 90.7)
+dat <- cbind(T8500, T8700, T8900, T9100)
+```
+
+```{r}
+y = c(t(as.matrix(dat))) 
+y
+```
+
+```{r}
+factor = c("T8500", "T8700", "T8900", "T9100")   # Factor1
+```
+
+```{r}
+treat = gl(a, 1, b*a, factor(factor))   #factor levels
+treat
+```
+
+```{r}
+block = gl(b, a, a*b)             # blocking factor 
+block
+```
+
+```{r}
+aov = aov(y ~ treat + block)
+summary(aov)
+```
+
+```{r}
+# -- One way anova
+result.oneway <- aov(y ~ treat)
+summary(result.oneway)
+```
+
+```{r}
+# Fisher LSD test
+LSD.test(aov, "treat", console = TRUE, p.adj="none")
+```
+
+```{r}
+#Tukey test
+TukeyHSD(aov)
+```
+
+```{r}
+# Normality test
+qqnorm(resid(aov))
+qqline(resid(aov))
+```
+
+```{r}
+shapiro.test(resid(aov))
+```
+
+```{r}
+res=residuals(aov)
+```
+
+```{r}
+plot(as.numeric(treat),res,main='Residuals vs. treatment')
+abline(h=0)
+```
+
+```{r}
+plot(as.numeric(block),res,main='Residuals vs. block')
+abline(h=0)
+```
+
+```{r}
+### Latin Square design
+## Example 4.3
+## Table 4.9
+##
+rm(list=ls())
+p = 5                   
+```
+
+```{r}
+r1 <- c(24, 20, 19, 24,24)
+r2 <- c(17, 24, 30, 27, 36)
+r3 <- c(18, 38, 26, 27, 21)
+r4 <- c(26, 31, 26, 23, 22)
+r5 <- c(22, 30, 20, 29, 31)
+```
+
+```{r}
+y = c(r1, r2, r3, r4, r5)
+y
+```
+
+```{r}
+treat = c("A", "B", "C", "D", "E", "B", "C", "D", "E", "A", "C", "D", "E", "A", "B", "D", "E", "A", "B", "C", "E", "A", "B", "C", "D")
+treat = factor(treat)
+```
+
+```{r}
+row.gp = gl(p, p, p^2)             # blocking factor 
+col.gp = rep( seq(1:p), p )
+```
+
+```{r}
+dat <- as.data.frame( cbind(y, treat, row.gp, col.gp) )
+dat$treat <- as.factor(dat$treat)
+dat$row.gp <- as.factor(dat$row.gp)
+dat$col.gp <- as.factor(dat$col.gp)
+```
+
+```{r}
+aov = aov(y ~ treat+col.gp + row.gp , data = dat)
+summary(aov)
+```

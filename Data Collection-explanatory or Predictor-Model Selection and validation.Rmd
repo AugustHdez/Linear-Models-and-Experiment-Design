@@ -1,0 +1,195 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+```{r}
+### surgical unit example from chapter 9
+df<- read.table("Surgical_Data.txt",header = F)
+```
+
+```{r}
+dim(df)
+```
+
+```{r}
+head(df)
+```
+
+```{r}
+names(df) <- c('x1', 'x2', 'x3', 'x4', 'x5', 'x6', 'x7', 'x8', 'y', 'lny')
+### x6: gender: 0=male; 1=female
+### x7: modertate alchohol use
+### x8: severe alchohol use
+### x5: age
+```
+
+```{r}
+str(df)
+```
+
+```{r}
+summary(df)
+```
+
+```{r}
+plot(df[,1:4])
+```
+
+```{r}
+cor(df[,c(9,1:4)])
+```
+
+```{r}
+with(df,
+     { stem(x1, 2)
+       stem(x2, 4)
+       stem(x3, 4)
+       stem(x4)
+     }) #stem and leaf plot
+boxplot(df)
+```
+
+```{r}
+lm.all <- lm(y ~ ., data = df[,c(1:4,9)])
+```
+
+```{r}
+par(mfrow = c(1,2))
+```
+
+```{r}
+plot(fitted(lm.all), resid(lm.all), xlab = "Predicted value", ylab = "Residual")
+title("(a) Residual Plot for Y")
+abline(0, 0)
+```
+
+```{r}
+qqnorm(resid(lm.all), xlab = "Expected Value", ylab = "Residual", main = "")
+qqline(resid(lm.all))
+title("(b) Normal Plot for Y")
+```
+
+```{r}
+lm.all.ln <- lm(lny ~ x1+x2+x3+x4, df)
+plot(fitted(lm.all.ln), resid(lm.all.ln ), xlab = "Predicted value", ylab = "Residual")
+title("(c) Residual Plot for lnY")
+abline(0, 0)
+```
+
+```{r}
+qqnorm(resid(lm.all.ln), xlab = "Expected Value", ylab = "Residual", main = "")
+qqline(resid(lm.all.ln))
+title("(d) Normal Plot for lnY")  #more close to normal
+```
+
+```{r}
+plot(df[,c(10,1:4)])#scatterplot matrix
+cor(df[,c(10,1:4)])# correlation matrix
+                   # use lnY as the response variable
+round(cor(df[,c(10,1:4)]),4)
+```
+
+```{r}
+# No covariates
+mylm <- lm(lny ~ 1, data = df)
+summary(mylm)
+r <- residuals(mylm)
+yhat <- predict(mylm)
+plot(yhat, r, main="yhat Vs r")
+abline(h=0)
+```
+
+```{r}
+qqnorm(r)
+qqline(r)
+```
+
+```{r}
+library(ALSM)
+AICp(mylm)
+SBCp(mylm)
+pressc(mylm)
+cpc(mylm,lm.all.ln)
+```
+
+```{r}
+# x1
+mylm <- lm(lny ~ x1, data = df)
+summary(mylm)
+```
+
+```{r}
+AICp(mylm)
+SBCp(mylm)
+pressc(mylm)
+cpc(mylm,lm.all.ln)
+```
+
+```{r}
+# all predictors
+AICp(lm.all.ln)
+SBCp(lm.all.ln)
+pressc(lm.all.ln)
+```
+
+```{r}
+#vif(lm.all.ln)
+```
+
+```{r}
+df <- df[,c(1:4,10)]
+### Stepwise regression
+full.model  <- lm(lny ~ ., data = df)
+start.model <- lm(lny ~ 1, data = df)
+```
+
+```{r}
+step(full.model, direction = "backward")
+step(full.model, direction = "both")
+```
+
+```{r}
+step(start.model, direction = "forward", scope = formula(full.model))
+step(start.model, direction = "both",    scope = formula(full.model))
+```
+
+```{r}
+## Subset selection
+regsub <- regsubsets(lny ~ x1+x2+x3+x4, data = df)
+sumreg <- summary(regsub)
+sumreg
+names(sumreg)
+```
+
+```{r}
+par(mfrow = c(1,1))
+plot( sumreg$rsq, xlab = "No. of variables", ylab = "R-square", type = "l" )
+plot( sumreg$adjr2, xlab = "No. of variables", ylab = "Adjusted R-square", type = "l" )
+plot( sumreg$cp, xlab = "No. of variables", ylab = "Cp values", type = "l" )
+plot( sumreg$bic, xlab = "No. of variables", ylab = "BIC", type = "l" )
+```
+
+```{r}
+## Selected variables
+par(mfrow=c(1,1))
+plot(regsub, scale = "r2")
+plot(regsub, scale = "adjr2")
+plot(regsub, scale = "Cp")
+plot(regsub, scale = "bic")
+```
+
+```{r}
+### when X4 is the only variable in the model
+lm4 <- lm(lny~x4,data = df)
+summary(lm4)
+```
+
+```{r}
+anova(lm4)
+sum(anova(lm4)$"Sum Sq")
+```
+
+```{r}
+anova(lm.all.ln)
+sum(anova(lm.all.ln)$"Sum Sq")
+```

@@ -1,0 +1,102 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+immu <- read.table("exerimmu.txt",header = T)
+```
+
+```{r}
+plot(immu$oxygen, immu$igg)
+```
+
+```{r}
+immu$oxygen2 <- immu$oxygen^2
+head(immu)
+```
+
+```{r}
+immu.quad <- lm(igg ~., data=immu)
+summary(immu.quad)
+```
+
+```{r}
+plot(immu$oxygen,fitted(immu.quad))
+```
+
+```{r}
+cor(immu$oxygen, immu$oxygen2)
+```
+
+```{r}
+immu$oxygen_c <- immu$oxygen-mean(immu$oxygen)
+cor(immu$oxygen_c,immu$oxygen_c^2)
+```
+
+```{r}
+immu$oxygen_c2 <- immu$oxygen_c^2
+```
+
+```{r}
+newfit <- lm(igg~ oxygen_c + oxygen_c2, data = immu)
+summary(newfit)
+```
+
+
+baby gestation and weight - smoker or not smoker mother 
+```{r}
+babybirth <- read.table("babybirth.txt", header = T)
+pairs(babybirth[1:2])
+```
+
+```{r}
+babybirth.lm <- lm(Wgt ~ ., data = babybirth)
+summary(babybirth.lm)
+```
+
+```{r}
+plot(babybirth$Gest, babybirth$Wgt,col=ifelse(babybirth$Smoke=="yes", "red", "blue"),
+     xlab="Gest", ylab = "Wgt")
+abline(coef(babybirth.lm)[[1]], coef(babybirth.lm)[[2]],col="blue") 
+abline(coef(babybirth.lm)[[1]] + coef(babybirth.lm)[[3]], coef(babybirth.lm)[[2]], col = "red") 
+```
+
+```{r}
+confint(babybirth.lm)
+```
+
+
+
+```{r}
+summary(babybirth.lm) #se for "Gest" is 9.128
+predict(babybirth.lm, interval="confidence",
+        newdata=data.frame(Gest=c(40,40), Smoke=c("yes", "no")))
+#fit      lwr      upr
+#1 3089.894 3028.906 3150.882
+#2 3334.438 3265.774 3403.102
+```
+
+```{r}
+babybirth.s <- lm(Wgt ~ Gest, data = babybirth,
+                  subset = (Smoke=="yes"))
+summary(babybirth.s) # se for "Gest" is 14.1
+```
+
+```{r}
+babybirth.ns <- lm(Wgt ~ Gest, data = babybirth,
+                   subset = (Smoke=="no"))
+```
+
+```{r}
+summary(babybirth.ns) # se for "Gest" is 11.97
+```
+
+```{r}
+predict(babybirth.s, interval="confidence",
+        newdata=data.frame(Gest=c(40))) # wider CI
+predict(babybirth.ns, interval="confidence",
+        newdata=data.frame(Gest=c(40)))
+```
+
+

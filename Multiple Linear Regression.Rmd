@@ -1,0 +1,265 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+```{r}
+#Example 1
+IQ <- read.table("IQ.txt",header = T)
+
+```
+
+
+```{r}
+pairs(IQ)# scatter plot matrix
+cor(IQ)
+names(IQ)
+PIQ.lm <- lm(PIQ~., data = IQ)
+PIQ.lm <- lm(PIQ~ Brain + Height + Weight, data = IQ)
+summary(PIQ.lm)
+```
+
+```{r}
+#Example 2
+birds <- read.table("babybirds.txt",header = T)
+```
+
+
+```{r}
+pairs(birds)
+library(lattice)
+cloud(Vent ~ O2 + CO2, birds, scales = list(arrows = FALSE), 
+      main = "3D plot")
+```
+
+```{r}
+birds.lm <- lm(Vent ~ . , data = birds)
+summary(birds.lm)
+```
+
+
+```{r}
+library("rgl")
+x <- birds$O2
+y <- birds$CO2
+z <- birds$Vent/100
+```
+
+
+```{r}
+rgl.open() # Open a new RGL device
+rgl.points(x, y, z, color ="lightgray") # Scatter plot
+
+rgl.open()# Open a new RGL device
+rgl.bg(color = "white") # Setup the background color
+rgl.points(x, y, z, color = "blue", size = 5) # Scatter plot
+
+rgl.open()# Open a new RGL device
+rgl.bg(color = "white") # Setup the background color
+rgl.spheres(x, y, z, r = 0.2, color = "grey") 
+```
+
+
+```{r}
+#dwainestudio example in section 6.9, page 236
+df <- read.table("https://www.math.uh.edu/~wwang/Teaching/MATH6357/dwainestudio.txt",header = F)
+names(df) <- c("y","x1", "x2")
+```
+
+# Y: sales
+# X1: the number of persons aged 16 or younger
+# X2: personal income
+
+```{r}
+
+df.lm <- lm(y ~ x1 + x2, df)
+summary(df.lm)
+anova(df.lm)
+```
+
+
+
+```{r}
+SST = sum(anova(df.lm)$`Sum Sq`)
+SSE = anova(df.lm)$`Sum Sq`[3]
+SSE = deviance(df.lm)
+SSR = SST-SSE
+MSR = SSR/2
+MSE = SSE/18
+Fstat=MSR/MSE
+# H0: beta1=beta2=0
+# Ha: not both equal 0
+1-pf(Fstat,2,18) # p-value
+qf(1-.05,2,18) # F critical value
+```
+
+$$H_0: \beta_1=\beta_2=0$$
+$$H_a: \neq 0$$
+
+```{r}
+d.mat <- model.matrix(df.lm) # design matrix
+t(d.mat)%*%d.mat
+t(d.mat)%*%df$y
+b.mat<- solve(t(d.mat)%*%d.mat)%*%t(d.mat)%*%df$y
+df.lm
+```
+
+
+##normal equation
+```{r}
+(t(d.mat)%*%d.mat)%*%b.mat
+t(d.mat)%*%df$y
+```
+
+##fitted value
+```{r}
+d.mat %*% b.mat
+```
+
+##residual
+```{r}
+df$y - d.mat %*% b.mat
+```
+
+
+
+
+
+
+```{r}
+#residual plot
+par(mfrow = c(2, 2), pch = 20)
+plot(resid(df.lm) ~ fitted(df.lm), xlab = "Fitted", ylab = "Residual")
+plot(resid(df.lm) ~ x1, df, ylab = "Residual")
+plot(resid(df.lm) ~ x2, df, ylab = "Residual")
+plot(resid(df.lm) ~ I(x1 * x2), df, xlab = "X1X2", ylab = "Residual")
+```
+
+
+
+```{r}
+par(mfrow = c(1, 1), pch = 20)
+plot(abs(resid(df.lm)) ~ fitted(df.lm), xlab = "Fitted", ylab = "Absresid")
+qqnorm(resid(df.lm), main = "", xlab = "Expected", ylab = "Residual")
+qqline(resid(df.lm))
+```
+
+
+```{r}
+s.mat <- MSE*solve(t(d.mat)%*%d.mat)
+```
+
+
+```{r}
+confint(df.lm, level = 0.99)
+b.mat[2] +c(-1,1) * qt(1-.05/2,18) * sqrt(s.mat[2,2])
+b.mat[3] +c(-1,1) * qt(1-.05/2,18) * sqrt(s.mat[3,3])#95% conf. interval for beta2
+```
+
+
+```{r}
+# 99%?
+b.mat[2] +c(-1,1) * qt(1-.01/2,18) * sqrt(s.mat[2,2])
+```
+
+
+```{r}
+#90% simultaneous confidence interval for beta1 and beta2, g=2
+b.mat[2] +c(-1,1) * qt(1-.1/4,18) * sqrt(s.mat[2,2])
+b.mat[3] +c(-1,1) * qt(1-.1/4,18) * sqrt(s.mat[3,3])
+```
+
+
+```{r}
+predict(df.lm, data.frame(x1 = 65.4, x2 = 17.6), interval = "confidence")
+```
+
+
+```{r}
+Xh <- c(1,65.4,17.6)
+Y_hat <- t(Xh)%*%b.mat
+Y_hat
+s.y <- t(Xh)%*%s.mat%*%Xh
+s.y
+Y_hat + c(-1,1) * qt(1-.025,18) * sqrt(s.y) #95% confidence interval for mean response
+```
+
+
+```{r}
+
+### grocery example probem 6.9 from textbook
+grocery <- read.table("Grocery_6-9.txt",header = T)
+names(grocery) <- c("Retailer", "Cases", "Costs", "Holiday")
+# national grocery retailer productivity and costs for 1 distribution center in 1 year
+#  Retailer = total labor hours per week (i = 1,...,52)
+# Cases = # of cases shipped per week
+# Costs = indirect costs of total labor hours per week (%)
+# Holiday = 1 if week has a holiday; 0 otherwise
+```
+
+
+```{r}
+#stem-and-leaf plots of predictor variables
+stem(grocery$Cases)
+stem(grocery$Costs)
+stem(grocery$Holiday)
+```
+
+
+```{r}
+#cases are given in consecutive weeks
+week = 1:52
+par(mfrow=c(3,1))
+plot(week,grocery$Cases,xlab="week",ylab="Cases",pch=20,type="l",main="time plot for Cases")
+plot(week,grocery$Costs,xlab="week",ylab="Costs",pch=20,type="l",main="time plot for Costs")
+plot(week,grocery$Holiday,xlab="week",ylab="Holiday",pch=20,type="l",main="time plot for Holiday")
+```
+
+
+```{r}
+cor(grocery) ## Correlation matrix 
+plot(grocery) ## scatter plot matrix
+```
+
+
+```{r}
+myMLR <- lm(Retailer~ Cases + Costs + Holiday, data=grocery)
+summary(myMLR)
+confint(myMLR,level=0.99)
+```
+
+
+```{r}
+par(mfrow=c(1,1))
+hist(resid(myMLR),main="Residual histogram")
+boxplot(resid(myMLR),main="Residual boxplot",horizontal = T)
+
+```
+
+```{r}
+par(mfrow=c(1,1))
+plot(myMLR$fit,resid(myMLR),xlab="y_hat",ylab="residuals",main="Resid vs fit")
+abline(h=0)
+plot(grocery$Cases,resid(myMLR),xlab="Cases",ylab="residuals",main="Resid vs Cases")
+abline(h=0)
+plot(grocery$Costs,resid(myMLR),xlab="Costs",ylab="residuals",main="Resid vs Costs")
+abline(h=0)
+plot(grocery$Holiday,resid(myMLR),xlab="Holiday",ylab="residuals",main="Resid vs Holiday")
+abline(h=0)
+plot(grocery$Cases*grocery$Costs,resid(myMLR),xlab="x1*x2",ylab="residuals",main="
+     resid vs X1X2")
+abline(h=0)
+qqnorm(resid(myMLR),main="qq plot")
+```
+
+
+```{r}
+
+## Confidence and prediction Interval for mean responses
+newXh <- data.frame( Cases = 300000, Costs = 6,Holiday = 0 )## vector Xh 
+##predict.lm(myMLR, newXh, interval = "prediction" , level=0.95)
+predict(myMLR, newXh, interval = "confidence", level=0.95)
+predict(myMLR, newXh, interval = "prediction", level=0.95)
+```
+

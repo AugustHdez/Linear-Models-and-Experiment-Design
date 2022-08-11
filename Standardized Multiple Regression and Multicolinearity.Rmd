@@ -1,0 +1,81 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+### work crew example
+```{r}
+crew <- read.table("hCH07TA06.txt",header = F)
+```
+
+```{r}
+head(crew)
+names(crew) <- c("X1","X2","Y")
+attach(crew)
+```
+
+```{r}
+cor(X1,X2) # X1 and X2 are uncorrelated
+```
+
+```{r}
+lm1<- lm(Y~X1)
+anova(lm1)
+```
+
+```{r}
+lm2 <- lm(Y~X2)
+anova(lm2)
+```
+
+```{r}
+lm12 <- lm(Y ~ X1+X2)
+anova(lm12) #SSR(X2|X1) vs. SSR(X2)
+```
+
+```{r}
+###correlated example
+df <- read.table("CH07TA08.txt",header = F)
+df
+```
+
+```{r}
+names(df) <- c("X1","X2","Y")
+attach(df)
+cor(X1,X2)
+```
+
+```{r}
+df.lm <- lm(Y~ X1+X2)
+summary(df.lm)
+```
+
+### body fat example
+
+```{r}
+library(ALSM)
+attach(BodyFat)
+```
+
+```{r}
+plot(BodyFat[,1:3])
+```
+
+```{r}
+cor(BodyFat[,1:3])
+```
+
+```{r}
+cor(x3,x1*x2)
+```
+
+```{r}
+bf.lm1 <- lm(y~x1)
+anova(bf.lm1)
+```
+
+```{r}
+bf.lm2 <- lm (y~x2+x1)
+anova(bf.lm2)
+```
+

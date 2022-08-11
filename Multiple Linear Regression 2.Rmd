@@ -1,0 +1,218 @@
+---
+title: "R Notebook"
+output: html_notebook
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+```{r}
+### Body Fat data
+### Extra sum of squares
+###
+rm(list=ls())
+library(ALSM)
+```
+
+```{r}
+n <- dim(BodyFat)[1]
+y  <- BodyFat$y
+x1 <- BodyFat$x1
+x2 <- BodyFat$x2
+x3 <- BodyFat$x3
+```
+
+```{r}
+## y ~x1
+slr.x1 <- lm(y ~ x1)
+coefficients(slr.x1)
+anova(slr.x1)
+```
+
+```{r}
+## y ~x2
+slr.x2 <- lm(y ~ x2)
+coefficients(slr.x2)
+anova(slr.x2)
+```
+
+```{r}
+## y ~x1+x2
+slr.x1x2 <- lm(y ~ x1+x2)
+coefficients(slr.x1x2)
+anova(slr.x1x2)
+```
+
+```{r}
+## y ~x1+x2+x3
+slr.x1x2x3 <- lm(y ~ x1+x2+x3)
+coefficients(slr.x1x2x3)
+anova(slr.x1x2x3)
+```
+
+```{r}
+### Allen test example
+allen <- read.table("allen.txt",header = T)
+names(allen)
+```
+
+```{r}
+allen.lm123 <- lm(ACL ~ Vocab+ Abstract + SDMT , data=allen)
+anova(allen.lm123)
+```
+
+```{r}
+allen.lm23 <- lm(ACL ~ Abstract + SDMT , data=allen)
+anova(allen.lm23)
+```
+
+```{r}
+anova(allen.lm23,allen.lm123)
+```
+
+```{r}
+allen.lm <- lm(ACL ~ Vocab, data=allen)# Vocab is x1
+summary(allen.lm)
+anova(allen.lm) # SSR? SSE? SStotal?
+```
+
+SSR(x1)=2.691 \#SSE(x1)=40.359 \#SST=43.050
+
+```{r}
+allen.lm13 <- lm(ACL ~ Vocab + SDMT, data=allen)      
+summary(allen.lm13) 
+anova(allen.lm13)
+```
+
+SSE(x1,x3)=31.2717 SSR(x1,x3)=2.6906+9.0872=11.7778, how does this
+compare with previous SSR? SST=43.0495
+
+stay the same. Why? it has nothing to do with predictors. Check the
+formulas.
+
+SSR(x3\|x1)= SSR(x1,x3)-SSR(x1)=11.7778-2.6906=9.0872 SSR(x3\|x1)=
+SSE(x1)-SSE(x1,x3)=40.359-31.2717=9.0872
+
+```{r}
+anova(update(allen.lm13, . ~ . - SDMT),allen.lm13)
+anova(update(allen.lm13, . ~ . - Vocab),allen.lm13)
+```
+
+```{r}
+drop1(allen.lm13,test = "F")
+```
+
+does the order matter?
+
+```{r}
+allen.lm <- lm(ACL ~ SDMT, data=allen)
+summary(allen.lm)
+anova(allen.lm) 
+
+```
+
+SSR(x3)=11.68
+SSE(x3)=31.37
+SST=sum(anova(allen.lm)$'Sum Sq')=43.04957
+
+SSR(x1|x3)=SSR(x1,x3)-SSR(x3)=11.7778-11.68=0.098
+          =SSE(x3)-SSE(x1,x3)=31.37-31.2717=0.098
+SSR(x1)=2.691 -->
+ x1= Vocab doesn't contribute much to explain/reduce the variability in y 
+after x3 = SDMT has already been considered. 
+
+```{r}
+names(allen)
+```
+
+```{r}
+lm1<- lm(ACL ~ Vocab + SDMT + Abstract, data=allen)
+anova(lm1)
+```
+
+```{r}
+lm2<- lm(ACL ~ SDMT + Vocab + Abstract, data=allen)
+anova(lm2)
+```
+
+```{r}
+lm3<- lm(ACL ~  Abstract + SDMT + Vocab, data=allen)
+anova(lm3)
+```
+
+```{r}
+allen.lm123 <- lm(ACL ~ Vocab+ Abstract + SDMT , data=allen)
+anova(allen.lm123)
+```
+
+```{r}
+model0 <- lm(ACL ~ 1, data=allen)
+anova(model0)
+```
+
+```{r}
+anova(model0, allen.lm123)
+```
+
+```{r}
+anova(update(allen.lm123, . ~ . - Vocab - Abstract - SDMT),allen.lm123)
+anova(update(allen.lm123, . ~ . - Vocab),allen.lm123)
+anova(update(allen.lm123, . ~ . - Abstract - SDMT),allen.lm123)
+```
+
+```{r}
+anova(allen.lm, allen.lm123)
+```
+
+## rabbit example
+
+```{r}
+
+rabbit <- read.table("rabbit.txt",header = T)
+names(rabbit)
+colnames(rabbit)[1] <- "Y"
+```
+
+```{r}
+rabbit.m1 <- lm(Y ~ Area + X2 + X3, data = rabbit)
+summary(rabbit.m1)
+anova(rabbit.m1)
+```
+
+```{r}
+rabbit.m0 <-lm(Y ~ 1, data = rabbit)
+anova(rabbit.m0,rabbit.m1)
+```
+
+```{r}
+rabbit.m2 <- lm(Y  ~ Area, data = rabbit)
+anova(rabbit.m2)
+```
+
+```{r}
+
+((0.87926-0.54491)/(30-28)) / (0.54491/28)
+```
+
+```{r}
+anova(rabbit.m2, rabbit.m1)
+```
+
+$$SSR(X2,X3|Area)$$
+
+```{r}
+0.31453+0.01981 # 
+```
+
+```{r}
+0.33434/0.87926 
+```
+ Partial R-squared $$(X2,X3|Area)$$
+              $$SSE(Area) = 0.87926$$
+              
+
+```{r}
+rabbit.m3 <- lm(Y ~ X2+X3, data = rabbit)
+anova(rabbit.m3)
+anova(rabbit.m3,rabbit.m1)
+```

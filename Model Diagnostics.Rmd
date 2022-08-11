@@ -1,0 +1,132 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+# consider four predictors
+```{r}
+df<- read.table("Surgical_Data.txt",header = F)
+head(df)
+```
+
+```{r}
+names(df) <- c('x1', 'x2', 'x3', 'x4', 'x5', 'x6', 'x7', 'x8', 'y', 'lny')
+```
+
+```{r}
+df <- df[,c(1:3,8,10)]
+head(df)
+```
+
+
+check if dropping all 6 interaction terms are appropriate
+```{r}
+mylm <- lm(lny ~ .^2, data = df)
+summary(mylm)
+```
+
+```{r}
+myanov <- anova(mylm)
+myanov
+```
+
+```{r}
+(sum(myanov$'Sum Sq'[5:10])/6)/(myanov$'Mean Sq'[11])
+1-pf(1.157722,6,43)
+```
+
+
+check if dropping all 6 interaction terms are appropriate: alternative method
+```{r}
+mylm.red <- lm(lny ~ ., data = df)
+summary(mylm.red)
+rsq_full <- summary(mylm)$r.squared
+rsq_red <- summary(mylm.red)$r.squared
+(rsq_full-rsq_red)/6/((1-rsq_full)/43)
+```
+
+
+continue without interaction
+```{r}
+mylm <- lm(lny ~ ., data = df)
+summary(mylm)
+```
+
+```{r}
+plot(resid(mylm) ~ fitted(mylm))
+abline(h=0)
+qqnorm(resid(mylm))
+qqline(resid(mylm))
+```
+
+```{r}
+library(ALSM)
+vif(mylm)
+```
+multicollinearity is not a problem
+
+
+## model diagnostics
+```{r}
+rstudent(mylm) #Studentized residuals
+plot(rstudent(mylm),type = "o",xlab = "Case Index")
+abline(h=3)
+abline(h=-3)
+text(rstudent(mylm), labels=rownames(df), cex=0.9, font=2)
+title("(a) Studentized Delected residuals")
+```
+
+```{r}
+hatvalues(mylm)#leverage values
+plot(hatvalues(mylm),type = "o")
+abline(h=2*(5)/54)#2p/n=2*(5)/54
+text(hatvalues(mylm), labels=rownames(df), cex=0.9, font=2)
+title("(b) Leverage Values")
+```
+
+```{r}
+cooks.distance(mylm)
+plot(cooks.distance(mylm),type = "o")# cook's distance
+text(cooks.distance(mylm), labels=rownames(df), cex=0.9, font=2)
+title("(c) Cook's Distance")
+pf(cooks.distance(mylm)[17],5,49) # case 17:11th percentile
+```
+
+```{r}
+dffits(mylm)
+plot(dffits(mylm),type = "o")#DFFITS
+text(dffits(mylm), labels=rownames(df), cex=0.9, font=2)
+```
+
+
+### blood presser vs age: WLS
+```{r}
+
+df<- read.table("CH11TA01.txt",header = F)
+head(df)
+```
+
+```{r}
+names(df)<- c("Age","BP")
+plot(df,main="(a) Scatter Plot")
+abline(lm(BP~Age,data=df))
+```
+
+```{r}
+plot(resid(lm(BP~Age,data=df)),xlab = "Age",ylab = "Residual",main = "(b) Residual Plot against X")
+abline(h=0)
+```
+
+```{r}
+abs.res=abs(resid(lm(BP~Age,data=df)))
+plot(abs.res,xlab = "Age",ylab = "Absolute Residual",main = "(c) Absolute Residual Plot against X")
+abs.res.fit <- lm(abs.res~df$Age)
+abline(abs.res.fit)
+abs.res.fit ### s_hat=-1.5495+.1981723*Age
+```
+
+```{r}
+wts <- 1/fitted(abs.res.fit)^2
+final.fit <- lm(BP~Age, data = df, weights = wts)
+final.fit
+```

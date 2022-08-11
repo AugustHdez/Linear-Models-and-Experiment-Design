@@ -1,0 +1,127 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+```{r}
+library(ISLR)
+```
+
+```{r}
+?Default
+dim(Default)
+names(Default)
+head(Default)
+```
+
+```{r}
+attach(Default)
+table(default)
+333/10000 #3% default
+```
+
+```{r}
+plot(income~balance, col=default)
+#plot in textbook is only using a small portion of the data
+```
+
+```{r}
+boxplot(balance ~ default)
+boxplot(income ~ default)
+```
+
+```{r}
+library(tibble)
+```
+
+```{r}
+as_tibble(Default)
+set.seed(42)
+default_idx = sample(nrow(Default), 5000)
+default_trn = Default[default_idx, ]
+default_tst = Default[-default_idx, ]
+```
+
+```{r}
+#let us first try the linear model first
+default_trn_lm = default_trn
+default_tst_lm = default_tst
+```
+
+```{r}
+default_trn_lm$default = as.numeric(default_trn_lm$default) - 1
+default_tst_lm$default = as.numeric(default_tst_lm$default) - 1
+```
+
+```{r}
+head(default_trn_lm)
+```
+
+```{r}
+model_lm = lm(default ~ balance, data = default_trn_lm) # no error
+```
+
+```{r}
+plot(default ~ balance, data = default_trn_lm, 
+     col = "darkorange", pch = "|", ylim = c(-0.2, 1),
+     main = "Using Linear Regression for Classification")
+abline(h = 0, lty = 3)
+abline(h = 1, lty = 3)
+abline(h = 0.5, lty = 2)
+abline(model_lm, lwd = 3, col = "dodgerblue")
+```
+
+```{r}
+all(predict(model_lm) < 0.5)
+any(predict(model_lm) < 0)
+```
+
+```{r}
+#
+model_glm = glm(default ~ balance, data = default_trn, family = "binomial")
+#default family="gaussion"==> linear regression
+```
+
+```{r}
+coef(model_glm)
+head(predict(model_glm))
+#### predict(model, type="")
+## default: type="link" ==> beta0+beta1x1+...+beta_p X_p
+## type="response" ==> probability for Y==1
+```
+
+```{r}
+head(predict(model_glm,type="response"))
+```
+
+```{r}
+### note that predict() only return to probabilities
+### for classification purpose:
+model_glm_pred = ifelse(predict(model_glm, type = "link") > 0, "Yes", "No")
+```
+
+```{r}
+#or,
+model_glm_pred1 = ifelse(predict(model_glm, type = "response") > 0.5, "Yes", "No")
+```
+
+```{r}
+table(model_glm_pred==model_glm_pred1)
+```
+
+```{r}
+#### model performance?
+mean(default_trn$default != model_glm_pred)
+```
+
+```{r}
+plot(default ~ balance, data = default_trn_lm, 
+     col = "darkorange", pch = "|", ylim = c(-0.2, 1),
+     main = "Using Logistic Regression for Classification")
+abline(h = 0, lty = 3)
+abline(h = 1, lty = 3)
+abline(h = 0.5, lty = 2)
+curve(predict(model_glm, data.frame(balance = x), type = "response"), 
+      add = TRUE, lwd = 3, col = "dodgerblue")
+```
+
+
